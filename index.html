@@ -184,60 +184,6 @@
                 });
             }
 
-            function saveToGoogleSheets(day, data) {
-                const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbxw96KyKQWDCtmgLgThLz2Ff_Ke3hKPQ-xH1LNJVk8nneX-ZR30HmoNovEa6JROrCcbPA/exec";
-
-                // Prepare the data payload
-                const payload = [];
-                Object.keys(data).forEach(exercise => {
-                    data[exercise].sets.forEach((set, index) => {
-                        payload.push({
-                            day: `Day ${day}`,
-                            exercise: exercise,
-                            set: `Set ${index + 1}`,
-                            reps: set.reps,
-                            kg: set.kg
-                        });
-                    });
-                });
-
-                // Send the data to the Google Apps Script
-                fetch(googleSheetsUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === "success") {
-                            console.log("Data successfully sent to Google Sheets");
-                        } else {
-                            console.error("Error saving data to Google Sheets:", data.message);
-                        }
-                    })
-                    .catch(error => console.error("Network error:", error));
-            }
-
-            document.getElementById("previous-day").addEventListener("click", () => {
-                if (currentDay > 1) {
-                    currentDay--;
-                    updateDayContent();
-                }
-            });
-
-            document.getElementById("next-day").addEventListener("click", () => {
-                if (currentDay < 30) {
-                    currentDay++;
-                    updateDayContent();
-                }
-            });
-
-            exerciseOption.addEventListener("change", () => {
-                displayExercises(exerciseOption.value);
-            });
-
             document.getElementById("save-progress").addEventListener("click", () => {
                 const inputs = exerciseListDiv.querySelectorAll("input, select");
                 if (!savedProgress[currentDay]) savedProgress[currentDay] = {};
@@ -263,8 +209,12 @@
                 localStorage.setItem('savedProgress', JSON.stringify(savedProgress));
                 localStorage.setItem('completedDays', JSON.stringify(Array.from(completedDays)));
 
-                // Call the function to send data to Google Sheets
-                saveToGoogleSheets(currentDay, savedProgress[currentDay]);
+                // Lock inputs
+                lockInputs();
+
+                // Mark day as completed
+                completedDays.add(currentDay);
+                renderCalendar();
             });
 
             function lockInputs() {
