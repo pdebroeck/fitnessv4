@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30-Day Workout Tracker</title>
+    <!-- TailwindCSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-500 text-white min-h-screen">
+    <header class="bg-gray-800 text-white py-4 shadow-md">
+        <h1 class="text-center text-3xl font-bold">30-Day Workout Tracker</h1>
+    </header>
+    <div class="container mx-auto mt-8 p-4 sm:p-6 bg-white text-gray-800 rounded-lg shadow-lg">
+        <!-- Navigation -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+            <button id="previous-day" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded shadow mb-2 sm:mb-0">Previous Day</button>
+            <span id="day-title" class="text-xl font-semibold">Day 1: Upper Body Push</span>
+            <button id="next-day" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded shadow">Next Day</button>
+        </div>
+
+        <!-- Exercise Options -->
+        <h2 class="text-2xl font-bold mb-4">Exercise Options</h2>
+        <select id="exercise-option" class="w-full border border-gray-300 rounded-lg py-2 px-4 mb-6">
+            <option value="resistance-bands">Resistance Bands</option>
+            <option value="gym-equipment">Gym Equipment</option>
+        </select>
+        <div id="exercise-list" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
+
+        <!-- Save Progress -->
+        <button id="save-progress" class="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded shadow">Save Progress</button>
+
+        <!-- Calendar -->
+        <h2 class="text-2xl font-bold mt-8">Calendar</h2>
+        <div id="calendar" class="grid grid-cols-4 sm:grid-cols-7 gap-4 mt-4"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const weeklyWorkouts = [
+                {
+                    day: "Upper Body Push",
+                    exercises: {
+                        "resistance-bands": [
+                            { name: "Resistance Band Push-Ups", sets: 4, reps: "12-15" },
+                            { name: "Resistance Band Shoulder Press", sets: 3, reps: "10-12" },
+                            { name: "Resistance Band Tricep Dips", sets: 3, reps: "12-15" },
+                            { name: "Resistance Band Chest Flys", sets: 3, reps: "10-12" },
+                            { name: "Plank-to-Push-Up", sets: 3, reps: "10" }
+                        ],
+                        "gym-equipment": [
+                            { name: "Barbell Bench Press", sets: 4, reps: "8-10" },
+                            { name: "Incline Dumbbell Press", sets: 3, reps: "10-12" },
+                            { name: "Overhead Shoulder Press", sets: 3, reps: "8-10" },
+                            { name: "Lateral Raises", sets: 3, reps: "12-15" },
+                            { name: "Dumbbell Tricep Extension", sets: 3, reps: "12-15" }
+                        ]
+                    }
+                },
+                {
+                    day: "Lower Body Strength",
+                    exercises: {
+                        "resistance-bands": [
+                            { name: "Resistance Band Squats", sets: 4, reps: "12-15" },
+                            { name: "Romanian Deadlifts", sets: 3, reps: "10-12" },
+                            { name: "Step-Out Lunges", sets: 3, reps: "12 per leg" },
+                            { name: "Glute Bridges", sets: 4, reps: "12-15" },
+                            { name: "Calf Raises", sets: 3, reps: "15-20" }
+                        ],
+                        "gym-equipment": [
+                            { name: "Barbell Back Squats", sets: 4, reps: "8-12" },
+                            { name: "Barbell Deadlifts", sets: 4, reps: "10-12" },
+                            { name: "Split Squats", sets: 3, reps: "10-12 per leg" },
+                            { name: "Dumbbell Glute Bridges", sets: 4, reps: "12-15" },
+                            { name: "Standing Calf Raises", sets: 3, reps: "15-20" }
+                        ]
+                    }
+                },
+                {
+                    day: "Active Recovery",
+                    exercises: {
+                        "resistance-bands": [],
+                        "gym-equipment": []
+                    }
+                },
+                {
+                    day: "Upper Body Pull",
+                    exercises: {
+                        "resistance-bands": [
+                            { name: "Band Rows", sets: 4, reps: "12-15" },
+                            { name: "Face Pulls", sets: 3, reps: "12-15" },
+                            { name: "Band Bicep Curls", sets: 3, reps: "10-12" },
+                            { name: "Pullover", sets: 3, reps: "10-12" },
+                            { name: "Superman Hold", sets: 3, reps: "Hold for 30 seconds" }
+                        ],
+                        "gym-equipment": [
+                            { name: "Barbell Rows", sets: 4, reps: "8-10" },
+                            { name: "Rear Delt Flys", sets: 3, reps: "12-15" },
+                            { name: "Barbell Curls", sets: 3, reps: "10-12" },
+                            { name: "Lat Pullover", sets: 3, reps: "10-12" },
+                            { name: "Superman Holds", sets: 3, reps: "Hold for 30 seconds" }
+                        ]
+                    }
+                }
+            ];
+
+            const dayData = {};
+            const savedProgress = JSON.parse(localStorage.getItem('savedProgress')) || {}; // Load from localStorage
+            const completedDays = new Set(JSON.parse(localStorage.getItem('completedDays')) || []); // Load from localStorage
+
+            for (let i = 1; i <= 30; i++) {
+                const workout = weeklyWorkouts[(i - 1) % weeklyWorkouts.length];
+                dayData[i] = {
+                    title: `Day ${i}: ${workout.day}`,
+                    exercises: workout.exercises
+                };
+            }
+
+            let currentDay = 1;
+            const dayTitle = document.getElementById("day-title");
+            const exerciseOption = document.getElementById("exercise-option");
+            const exerciseListDiv = document.getElementById("exercise-list");
+            const calendarDiv = document.getElementById("calendar");
+
+            function updateDayContent() {
+                const dayInfo = dayData[currentDay];
+                dayTitle.textContent = dayInfo.title;
+                displayExercises(exerciseOption.value);
+            }
+
+            function getPreviousResults(exerciseName, currentDay) {
+                for (let day = currentDay - 1; day > 0; day--) {
+                    if (savedProgress[day] && savedProgress[day][exerciseName]) {
+                        return savedProgress[day][exerciseName].sets.map((set, i) => `Set ${i + 1}: ${set.reps} reps, ${set.kg} kg`).join(', ');
+                    }
+                }
+                return "No previous results available.";
+            }
+
+            function displayExercises(option) {
+                const dayInfo = dayData[currentDay];
+                exerciseListDiv.innerHTML = '';
+                if (!dayInfo.exercises[option].length) {
+                    exerciseListDiv.innerHTML = '<p class="text-gray-500">No exercises for this day.</p>';
+                    return;
+                }
+                dayInfo.exercises[option].forEach((exercise, index) => {
+                    const exerciseDiv = document.createElement("div");
+                    exerciseDiv.classList.add("bg-gray-100", "p-4", "rounded-lg", "shadow-md", "hover:shadow-lg", "transition");
+
+                    let savedResults = '';
+                    if (completedDays.has(currentDay) && savedProgress[currentDay]?.[exercise.name]) {
+                        const { sets } = savedProgress[currentDay][exercise.name];
+                        savedResults = sets.map((set, i) => `<p class='text-green-600 font-semibold'>Set ${i + 1}: ${set.reps} reps, ${set.kg} kg</p>`).join('');
+                    }
+
+                    const previousResults = getPreviousResults(exercise.name, currentDay);
+
+                    exerciseDiv.innerHTML = `<h3 class="text-lg font-semibold mb-2">${exercise.name}</h3>
+                        <p class="text-sm mb-4">Sets: ${exercise.sets} | Reps: ${exercise.reps}</p>
+                        <p class="text-sm italic text-gray-500">Previous: ${previousResults}</p>
+                        ${savedResults}`;
+
+                    if (!completedDays.has(currentDay)) {
+                        for (let i = 1; i <= exercise.sets; i++) {
+                            const savedSet = savedProgress[currentDay]?.[exercise.name]?.sets?.[i - 1] || { reps: '', kg: '0' };
+                            exerciseDiv.innerHTML += `
+                                <label class="block text-sm font-medium mb-1">Set ${i}</label>
+                                <input type="number" placeholder="Reps" value="${savedSet.reps}" class="w-full border rounded-lg p-2 mb-2">
+                                <select class="w-full border rounded-lg p-2 mb-2">
+                                    <option value="0" ${savedSet.kg === '0' ? 'selected' : ''}>0 kg</option>
+                                    <option value="10" ${savedSet.kg === '10' ? 'selected' : ''}>10 kg</option>
+                                    <option value="20" ${savedSet.kg === '20' ? 'selected' : ''}>20 kg</option>
+                                    <option value="30" ${savedSet.kg === '30' ? 'selected' : ''}>30 kg</option>
+                                    <option value="40" ${savedSet.kg === '40' ? 'selected' : ''}>40 kg</option>
+                                    <option value="50" ${savedSet.kg === '50' ? 'selected' : ''}>50 kg</option>
+                                </select>
+                            `;
+                        }
+                    }
+                    exerciseListDiv.appendChild(exerciseDiv);
+                });
+            }
+
+            function saveToGoogleSheets(day, data) {
+                const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbxw96KyKQWDCtmgLgThLz2Ff_Ke3hKPQ-xH1LNJVk8nneX-ZR30HmoNovEa6JROrCcbPA/exec";
+
+                // Prepare the data payload
+                const payload = [];
+                Object.keys(data).forEach(exercise => {
+                    data[exercise].sets.forEach((set, index) => {
+                        payload.push({
+                            day: `Day ${day}`,
+                            exercise: exercise,
+                            set: `Set ${index + 1}`,
+                            reps: set.reps,
+                            kg: set.kg
+                        });
+                    });
+                });
+
+                // Send the data to the Google Apps Script
+                fetch(googleSheetsUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            console.log("Data successfully sent to Google Sheets");
+                        } else {
+                            console.error("Error saving data to Google Sheets:", data.message);
+                        }
+                    })
+                    .catch(error => console.error("Network error:", error));
+            }
+
+            document.getElementById("previous-day").addEventListener("click", () => {
+                if (currentDay > 1) {
+                    currentDay--;
+                    updateDayContent();
+                }
+            });
+
+            document.getElementById("next-day").addEventListener("click", () => {
+                if (currentDay < 30) {
+                    currentDay++;
+                    updateDayContent();
+                }
+            });
+
+            exerciseOption.addEventListener("change", () => {
+                displayExercises(exerciseOption.value);
+            });
+
+            document.getElementById("save-progress").addEventListener("click", () => {
+                const inputs = exerciseListDiv.querySelectorAll("input, select");
+                if (!savedProgress[currentDay]) savedProgress[currentDay] = {};
+
+                inputs.forEach((input, index) => {
+                    const exerciseDiv = input.closest("div");
+                    const exerciseName = exerciseDiv.querySelector("h3").textContent;
+                    if (!savedProgress[currentDay][exerciseName]) {
+                        savedProgress[currentDay][exerciseName] = { sets: [] };
+                    }
+                    const setIndex = Math.floor(index / 2);
+                    if (!savedProgress[currentDay][exerciseName].sets[setIndex]) {
+                        savedProgress[currentDay][exerciseName].sets[setIndex] = { reps: '', kg: '0' };
+                    }
+                    if (input.placeholder === "Reps") {
+                        savedProgress[currentDay][exerciseName].sets[setIndex].reps = input.value;
+                    } else if (input.tagName === "SELECT") {
+                        savedProgress[currentDay][exerciseName].sets[setIndex].kg = input.value;
+                    }
+                });
+
+                // Save to localStorage
+                localStorage.setItem('savedProgress', JSON.stringify(savedProgress));
+                localStorage.setItem('completedDays', JSON.stringify(Array.from(completedDays)));
+
+                // Call the function to send data to Google Sheets
+                saveToGoogleSheets(currentDay, savedProgress[currentDay]);
+            });
+
+            function lockInputs() {
+                const inputs = exerciseListDiv.querySelectorAll("input, select");
+                inputs.forEach(input => input.setAttribute("disabled", "true"));
+            }
+
+            function renderCalendar() {
+                calendarDiv.innerHTML = '';
+                for (let i = 1; i <= 30; i++) {
+                    const dayDiv = document.createElement("div");
+                    dayDiv.textContent = `Day ${i}`;
+                    dayDiv.classList.add("bg-gray-100", "p-3", "rounded-lg", "shadow", "hover:bg-blue-500", "hover:text-white", "transition", "text-center", "cursor-pointer");
+                    if (completedDays.has(i)) {
+                        dayDiv.classList.add("bg-green-500", "text-white");
+                    }
+                    dayDiv.addEventListener("click", () => {
+                        currentDay = i;
+                        updateDayContent();
+                    });
+                    calendarDiv.appendChild(dayDiv);
+                }
+            }
+
+            updateDayContent();
+            renderCalendar();
+        });
+    </script>
+</body>
+</html>
